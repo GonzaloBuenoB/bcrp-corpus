@@ -15,9 +15,8 @@ can include passages and physical PDF page numbers.
 ## Install
 
 1. Download and unpack the public source release. A GitHub account is optional.
-2. Verify the corpus archive against the SHA-256 checksum supplied with it.
-   Extract it into a directory named `bcrp-corpus-data` next to the software
-   directory. Preserve `data/db/bcrp.sqlite` and `data/pdfs/` inside it.
+2. Place the supplied `bcrp-corpus-data-*.zip` and its `.zip.sha256` file
+   next to the software directory.
 3. In the source directory, run:
 
    ```sh
@@ -28,9 +27,7 @@ can include passages and physical PDF page numbers.
    restart or reload the client. For clients with separate command and argument
    fields, use the values printed under `command` and `args`.
 
-The installer checks Python, time zone data, SQLite FTS5, the corpus database,
-and the PDF renderer before printing the configuration. You can also pass
-the path to a different extracted corpus directory. The server
-reads the archive locally. Keep the runtime release and archive version with
-your notes so you can reproduce results. To use a new archive, extract it
-separately and rerun the installer with its directory.
+Setup verifies the checksum, extracts the data locally, and checks the runtime
+before printing the configuration. To install a different snapshot, run
+`python3 install.py` with the path to its ZIP, then use the printed settings.
+You can also pass the path to an already extracted corpus directory.
