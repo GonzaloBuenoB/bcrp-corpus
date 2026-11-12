@@ -16,19 +16,21 @@ can include passages and physical PDF page numbers.
 
 1. Download and unpack the public source release. A GitHub account is optional.
 2. Verify the corpus archive against the SHA-256 checksum supplied with it.
-   Extract it into its own directory, preserving the paths. That directory
-   should contain `data/db/bcrp.sqlite` and `data/pdfs/`.
+   Extract it into a directory named `bcrp-corpus-data` next to the software
+   directory. Preserve `data/db/bcrp.sqlite` and `data/pdfs/` inside it.
 3. In the source directory, run:
 
    ```sh
-   python3 install.py /path/to/extracted-corpus
+   python3 install.py
    ```
 
 4. Add the printed server entry to your MCP client's local server settings and
    restart or reload the client. For clients with separate command and argument
    fields, use the values printed under `command` and `args`.
 
-The installer checks the database and prints the configuration. The server
+The installer checks Python, time zone data, SQLite FTS5, the corpus database,
+and the PDF renderer before printing the configuration. You can also pass
+the path to a different extracted corpus directory. The server
 reads the archive locally. Keep the runtime release and archive version with
 your notes so you can reproduce results. To use a new archive, extract it
 separately and rerun the installer with its directory.
