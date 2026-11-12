@@ -17,6 +17,32 @@ from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 DATABASE = "data/db/bcrp.sqlite"
 PDF_PATH = re.compile(r"data/pdfs/(?:wp/dt-\d{4}-\d{3}|(?:ri|moneda)/[0-9a-f]{64})\.pdf")
+SERVER_NAME = "BCRP Corpus"
+
+
+def register_claude(config, server):
+    if config.is_symlink():
+        raise ValueError(f"Claude Desktop configuration is a symlink: {config}")
+    original = config.read_bytes() if config.exists() else None
+    settings = json.loads(original) if original is not None else {}
+    if not isinstance(settings, dict) or not isinstance(settings.get("mcpServers", {}), dict):
+        raise ValueError(f"Invalid Claude Desktop configuration: {config}")
+    servers = settings.setdefault("mcpServers", {})
+    if servers.get(SERVER_NAME) == server:
+        return
+    servers[SERVER_NAME] = server
+    if original is not None:
+        with tempfile.NamedTemporaryFile(dir=config.parent, prefix=config.name + ".bak-", delete=False) as backup:
+            backup.write(original)
+    with tempfile.NamedTemporaryFile(dir=config.parent, delete=False, mode="w", encoding="utf-8") as output:
+        replacement = Path(output.name)
+        try:
+            json.dump(settings, output, indent=2)
+            output.write("\n")
+            output.close()
+            replacement.replace(config)
+        finally:
+            replacement.unlink(missing_ok=True)
 
 
 def extract_archive(archive, root, validate):
@@ -80,6 +106,7 @@ def main():
         nargs="?",
         help="Corpus archive or extracted directory (default: find it next to the software)",
     )
+    parser.add_argument("--print-config", action="store_true", help="Print MCP settings for another client")
     args = parser.parse_args()
     if sys.version_info < (3, 10):
         parser.error("Install Python 3.10 or later and rerun setup.")
@@ -137,10 +164,19 @@ def main():
     server_args = [str(server), "--root", str(root)]
     if renderer:
         server_args.extend(("--pdftoppm", str(Path(renderer).resolve())))
-    print(json.dumps({"mcpServers": {"BCRP Corpus": {
+    server_config = {
         "command": os.path.abspath(sys.executable),
         "args": server_args,
-    }}}, indent=2))
+    }
+    config_dir = Path(os.environ.get("XDG_CONFIG_HOME") or Path.home() / ".config") / "Claude"
+    if sys.platform.startswith("linux") and config_dir.is_dir() and not args.print_config:
+        try:
+            register_claude(config_dir / "claude_desktop_config.json", server_config)
+        except (OSError, ValueError) as error:
+            parser.error(str(error))
+        print("BCRP Corpus is configured. Fully quit and reopen Claude Desktop.")
+    else:
+        print(json.dumps({"mcpServers": {SERVER_NAME: server_config}}, indent=2))
 
 
 if __name__ == "__main__":

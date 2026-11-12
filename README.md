@@ -24,11 +24,12 @@ can include passages and physical PDF page numbers.
    python3 install.py
    ```
 
-4. Add the printed server entry to your MCP client's local server settings and
-   restart or reload the client. For clients with separate command and argument
-   fields, use the values printed under `command` and `args`.
+4. If setup finds Claude Desktop's standard Linux configuration directory,
+   it registers BCRP Corpus automatically. Fully quit and reopen Claude Desktop.
+   For other MCP clients, add the server entry printed by setup and reload the client.
+   Use `--print-config` to print the entry on any platform.
 
 Setup extracts the data locally, verifies the supplied checksum for ZIP archives, and checks the runtime
-before printing the configuration. To install a different snapshot, run
-`python3 install.py` with the path to its archive, then use the printed settings.
+before configuring the connection. To install a different snapshot, run
+`python3 install.py` with the path to its archive.
 You can also pass the path to an already extracted corpus directory.
