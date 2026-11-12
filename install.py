@@ -9,6 +9,7 @@ import re
 import shutil
 import sqlite3
 import sys
+from tarfile import TarError, open as open_tar
 import tempfile
 from zipfile import BadZipFile, ZipFile
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
@@ -48,6 +49,28 @@ def extract_archive(archive, root, validate):
             staging.rename(root)
 
 
+def extract_tarball(archive, root, validate):
+    with open_tar(archive, "r:gz") as bundle, tempfile.TemporaryDirectory(dir=root.parent) as temp:
+        staging = Path(temp) / "corpus"
+        for entry in bundle:
+            parts = entry.name.split("/")
+            for index, part in enumerate(parts):
+                if part not in ("db", "pdfs"):
+                    continue
+                name = "data/" + "/".join(parts[index:])
+                if name != DATABASE and not PDF_PATH.fullmatch(name):
+                    continue
+                if not entry.isfile():
+                    raise ValueError(f"Expected a regular file in the archive: {entry.name!r}.")
+                target = staging / name
+                target.parent.mkdir(parents=True, exist_ok=True)
+                with bundle.extractfile(entry) as member, target.open("xb") as output:
+                    shutil.copyfileobj(member, output)
+                break
+        validate(staging)
+        staging.rename(root)
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     runtime = Path(__file__).resolve().parent
@@ -55,7 +78,7 @@ def main():
         "corpus",
         type=Path,
         nargs="?",
-        help="Corpus ZIP or extracted corpus directory (default: find it next to the software)",
+        help="Corpus archive or extracted directory (default: find it next to the software)",
     )
     args = parser.parse_args()
     if sys.version_info < (3, 10):
@@ -84,22 +107,31 @@ def main():
     try:
         root = args.corpus.resolve() if args.corpus else runtime.parent / "bcrp-corpus-data"
         archive = None
-        if args.corpus and root.suffix.lower() == ".zip" and not root.is_dir():
+        if args.corpus and root.name.endswith((".zip", ".tar.gz")) and not root.is_dir():
             archive = root
-            root = root.with_suffix("")
+            root = (
+                archive.with_suffix("") if archive.name.endswith(".zip")
+                else archive.with_name(archive.name.removesuffix(".tar.gz") + "-data")
+            )
         elif not args.corpus and not root.exists():
             archives = sorted(runtime.parent.glob("bcrp-corpus-data-*.zip"))
+            tarball = runtime.parent / "bcrp-corpus.tar.gz"
+            if tarball.is_file():
+                archives.append(tarball)
             if len(archives) != 1:
                 raise ValueError(
-                    "Place one BCRP Corpus data ZIP and its .sha256 file next to the software "
-                    "directory, or pass the path to the ZIP."
+                    "Place the BCRP Corpus data archive next to the software directory, "
+                    "or pass its path to setup."
                 )
             archive = archives[0]
         if archive and not root.exists():
-            extract_archive(archive, root, validate)
+            if archive.name.endswith(".tar.gz"):
+                extract_tarball(archive, root, validate)
+            else:
+                extract_archive(archive, root, validate)
         else:
             validate(root)
-    except (RetrievalError, sqlite3.Error, OSError, ValueError, BadZipFile) as error:
+    except (RetrievalError, sqlite3.Error, OSError, ValueError, BadZipFile, TarError, EOFError) as error:
         parser.error(str(error))
     server = runtime / "serve.py"
     server_args = [str(server), "--root", str(root)]
