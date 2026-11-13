@@ -5,6 +5,12 @@ Central de Reserva del Perú. It supports keyword and phrase search across
 working papers, Revista Moneda, and Inflation Reports and their boxes. Results
 can include passages and physical PDF page numbers.
 
+## Current release and planned profiles
+
+The currently available installer is **keyword-only**. A Full profile with semantic and hybrid retrieval and optional neural reranking is planned but not yet available. The planned Full profile will be the default for research trials; Lite will remain an optional keyword-only profile. Both will retain original-page evidence, scope, filters and provenance, and use separately supplied compatible corpus snapshots. Full will require pinned inference dependencies and a matching precomputed semantic index, not local corpus rebuilding. Acquisition, conversion and automatic corpus maintenance are outside this portable product.
+
+The commands below describe the current keyword-only release. Do not interpret a successful installation as acceptance of the planned Full profile.
+
 ## Requirements
 
 - Python 3.10 or later with SQLite FTS5 and IANA time zone data.
