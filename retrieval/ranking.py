@@ -87,12 +87,15 @@ def document_filters(
     return clauses, args
 
 
-def lexical(c, query, filters, kind, limit):
+def lexical(c, query, filters, kind, limit, *, document_id=None):
     configure(c)
     clauses, args = document_filters(**filters)
     clauses.insert(0, "search_index MATCH ?")
     args.insert(0, query_expression(query))
     clauses.append("(search_index.chunk_id IS NULL OR (" + PASSAGE_ELIGIBLE + "))")
+    if document_id is not None:
+        clauses.append("search_index.doc=?")
+        args.append(document_id)
     if kind != "all":
         clauses.append(
             "search_index.chunk_id IS " + ("NOT NULL" if kind == "passage" else "NULL")

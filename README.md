@@ -33,3 +33,30 @@ Setup extracts the data locally, verifies the supplied checksum for ZIP archives
 before configuring the connection. To install a different snapshot, run
 `python3 install.py` with the path to its archive.
 You can also pass the path to an already extracted corpus directory.
+
+
+## Optional broad research workflow
+
+The experimental wrapper uses the local keyword index to find candidate
+documents, then looks inside shortlisted research papers for matching body
+pages. It supplies the selected text, physical PDF page references and quality
+warnings to Claude Code. It checks that requested sections have content and
+allows one completion pass for missing sections.
+
+Run it from the software directory with a signed-in Claude Code installation:
+
+```sh
+python3 -B research.py question.md plan.json new-output-directory --root /path/to/extracted/corpus
+```
+
+The JSON plan contains a `needs` list with `label`, `collection`, `query`,
+and `fallback` for each evidence need. An optional `passage_query` can
+specify body-search terms in the source language. Set `deliverables` to the
+exact Markdown section titles requested. The output directory stores the
+answer, local evidence packet, and execution traces. Use the direct MCP
+workflow for factual lookups.
+
+Retrieval runs locally. Claude Code receives the question and retrieved
+excerpts when drafting. The basic evidence handoff has been checked.
+Full-answer coverage, citation accuracy, and consistent research quality
+still need evaluation.
